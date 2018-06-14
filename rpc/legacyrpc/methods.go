@@ -3072,10 +3072,20 @@ func signRawTransactions(s *Server, icmd interface{}) (interface{}, error) {
 		}
 	} else { // Just return the results.
 		for i, result := range results {
+			msgTx := wire.NewMsgTx()
+			rawTx, err := hex.DecodeString(result.Hex)
+			if err != nil {
+				return nil, rpcError(dcrjson.ErrRPCDeserialization, err)
+			}
+			err = msgTx.Deserialize(bytes.NewReader(rawTx))
+			if err != nil {
+				return nil, rpcError(dcrjson.ErrRPCDeserialization, err)
+			}
+			txHash := msgTx.TxHash().String()
 			st := dcrjson.SignedTransaction{
 				SigningResult: result,
 				Sent:          false,
-				TxHash:        nil,
+				TxHash:        &txHash,
 			}
 			toReturn[i] = st
 		}
